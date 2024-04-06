@@ -7,7 +7,7 @@ def get_wandb_configs() -> ml_collections.ConfigDict:
     
     config.name = None
     config.project = "CamVid"
-    config.entity = "av-demo"
+    config.entity = "pigpeppa"
     config.job_type = "sweep"
     config.artifact_id = "camvid-dataset:latest"
 
