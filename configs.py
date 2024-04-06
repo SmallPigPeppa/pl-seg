@@ -10,7 +10,7 @@ def get_wandb_configs() -> ml_collections.ConfigDict:
     config.entity = "pigpeppa"
     # config.entity = "av-demo"
     config.job_type = "sweep"
-    config.artifact_id = "wandb/av-demo/CamVid/camvid-dataset:latest"
+    config.artifact_id = "av-demo/CamVid/tiny-kitti-test-set:lasted"
 
     return config
 
