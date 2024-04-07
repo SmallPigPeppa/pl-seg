@@ -1,5 +1,4 @@
 fastai
 torch
-jupyterlab
 wandb
 ml_collections

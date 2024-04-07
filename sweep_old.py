@@ -25,7 +25,13 @@ def main(_):
             "image_resize_factor": {"values": [2, 4]},
             "backbone": {
                 "values": [
+                    "mobilenetv2_100",
+                    "mobilenetv3_small_050",
+                    "mobilenetv3_large_100",
+                    "resnet18",
+                    "resnet34",
                     "resnet50",
+                    "vgg19",
                 ]
             },
             "loss_function": {"values": ["categorical_cross_entropy", "focal", "dice"]},
