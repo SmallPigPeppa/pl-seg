@@ -2,6 +2,7 @@ import timm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from timm.models._manipulate import checkpoint_seq
 
 
 class ConvLayer(nn.Sequential):
@@ -129,6 +130,18 @@ class DynamicUnet(nn.Module):
         )
         return x
 
+    def forward_features(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.net.patch_embed(x)
+        x = self.net._pos_embed(x)
+        x = self.net.patch_drop(x)
+        x = self.net.norm_pre(x)
+        if self.net.grad_checkpointing and not torch.jit.is_scripting():
+            x = checkpoint_seq(self.net.blocks, x)
+        else:
+            x = self.net.blocks(x)
+        x = self.net.norm(x)
+        return x
+
 
 class SegmentationModel(nn.Module):
     def __init__(self, backbone="mobilenetv2_100", hidden_dim=256, num_classes=21):
@@ -145,6 +158,7 @@ class SegmentationModel(nn.Module):
 
 
 if __name__ == '__main__':
+    # m = SegmentationModel(backbone='vit_base_patch16_224.augreg2_in21k_ft_in1k')
     m = SegmentationModel(backbone='resnet50')
     x = torch.rand(size=[4, 3, 112, 112])
     out = m(x)

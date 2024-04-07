@@ -1,6 +1,8 @@
 import wandb
 from typing import Tuple, Dict
-from fastai.vision.all import *
+# from fastai.vision.all import *
+from fastai.vision.all import Image, Path, Resize, progress_bar, get_image_files, SegmentationDataLoaders
+import numpy as np
 
 
 def label_func(fn):
@@ -22,7 +24,7 @@ def get_frequency_distribution(mask_data, class_labels):
 
 def log_dataset(project: str, entity: str, artifact_id: str, class_labels: Dict):
     with wandb.init(
-        project=project, name="visualize_camvid", entity=entity, job_type="data_viz"
+            project=project, name="visualize_camvid", entity=entity, job_type="data_viz"
     ):
         artifact = wandb.use_artifact(artifact_id, type="dataset")
         artifact_dir = artifact.download()
@@ -63,12 +65,12 @@ def log_dataset(project: str, entity: str, artifact_id: str, class_labels: Dict)
 
 
 def get_dataloader(
-    artifact_id: str,
-    batch_size: int,
-    image_shape: Tuple[int, int],
-    resize_factor: int,
-    validation_split: float,
-    seed: int,
+        artifact_id: str,
+        batch_size: int,
+        image_shape: Tuple[int, int],
+        resize_factor: int,
+        validation_split: float,
+        seed: int,
 ):
     """Grab an artifact and creating a Pytorch DataLoader"""
     artifact = wandb.use_artifact(artifact_id, type="dataset")
