@@ -29,6 +29,21 @@ class Encoder2D(nn.Module):
 
         self.is_segmentation = is_segmentation
 
+
+
+        orig_net = create_model(self.weights, pretrained=True)
+        # self.net = create_model(self.weights, pretrained=True)
+        state_dict = orig_net.state_dict()
+        self.origin_state_dict = state_dict
+        model_fn = getattr(timm.models, orig_net.default_cfg["architecture"])
+        self.net = model_fn(
+            img_size=224,
+            patch_size=16,
+            num_classes=self.num_classes,
+            dynamic_img_size=True
+        ).to(self.device)
+        self.net.load_state_dict(state_dict, strict=True)
+
     def forward(self, x):
         ## x:(b, c, w, h)
         b, c, h, w = x.shape
@@ -55,6 +70,18 @@ class Encoder2D(nn.Module):
         x = rearrange(x, "b (h w) (p1 p2 c) -> b c (h p1) (w p2)", p1=self.hh, p2=self.ww, h=hh, w=ww,
                       c=self.config.hidden_size)
         return encode_x, x
+
+    def forward_features(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.net.patch_embed(x)
+        x = self.net._pos_embed(x)
+        x = self.net.patch_drop(x)
+        x = self.net.norm_pre(x)
+        if self.net.grad_checkpointing and not torch.jit.is_scripting():
+            x = checkpoint_seq(self.net.blocks, x)
+        else:
+            x = self.net.blocks(x)
+        x = self.net.norm(x)
+        return x
 
 
 class PreTrainModel(nn.Module):

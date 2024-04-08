@@ -186,12 +186,6 @@ class ClassificationEvaluator(pl.LightningModule):
             weight_decay=self.wd,
             momentum=0.9)
 
-        # optimizer = torch.optim.SGD(
-        #     self.parameters(),
-        #     lr=self.lr,
-        #     weight_decay=self.wd,
-        #     momentum=0.9)
-
         scheduler = LinearWarmupCosineAnnealingLR(
             optimizer,
             warmup_epochs=5,
@@ -288,7 +282,6 @@ class ClassificationEvaluator(pl.LightningModule):
         self.patch_embed_12x12 = self.get_new_patch_embed(new_image_size=168, new_patch_size=12)
         self.patch_embed_16x16 = self.get_new_patch_embed(new_image_size=224, new_patch_size=16)
         self.patch_embed_16x16_origin = self.get_new_patch_embed(new_image_size=224, new_patch_size=16)
-        # import pdb;pdb.set_trace()
 
         self.net.patch_embed = nn.Identity()
 
@@ -299,22 +292,15 @@ class ClassificationEvaluator(pl.LightningModule):
             in_chans=self.in_chans,
             embed_dim=self.embed_dim,
             bias=not self.pre_norm,  # disable bias if pre-norm is used (e.g. CLIP)
-            # dynamic_img_pad=self.dynamic_img_pad,
             **self.embed_args,
         )
         if hasattr(self.net.patch_embed.proj, 'weight'):
             origin_weight = self.net.patch_embed.proj.weight.clone().detach()
-            # new_weight = pi_resize_patch_embed(
-            #     patch_embed=self.origin_state_dict["patch_embed.proj.weight"],
-            #     new_patch_size=(new_patch_size, new_patch_size)
-            # )
             new_weight = pi_resize_patch_embed(
                 patch_embed=origin_weight, new_patch_size=(new_patch_size, new_patch_size)
             )
             new_patch_embed.proj.weight = nn.Parameter(new_weight, requires_grad=True)
         if self.net.patch_embed.proj.bias is not None:
-            # new_patch_embed.proj.bias = nn.Parameter(torch.tensor(self.origin_state_dict["patch_embed.proj.bias"]),
-            #                                          requires_grad=True)
             new_patch_embed.proj.bias = nn.Parameter(self.net.patch_embed.proj.bias.clone().detach(),
                                                      requires_grad=True)
 
@@ -322,37 +308,3 @@ class ClassificationEvaluator(pl.LightningModule):
 
 
 
-if __name__ == "__main__":
-    parser = LightningArgumentParser()
-    parser.add_lightning_class_args(pl.Trainer, None)  # type:ignore
-    parser.add_lightning_class_args(ClassificationEvaluator, "model")
-    parser.add_argument("--batch_size", type=int, default=256)
-    parser.add_argument("--works", type=int, default=4)
-    parser.add_argument("--root", type=str, default='./data')
-    args = parser.parse_args()
-    args["logger"] = False  # Disable saving logging artifacts
-
-    wandb_logger = WandbLogger(name='add-random-resize-4conv-fix14token-2range', project='L2P',
-                               entity='pigpeppa', offline=False)
-    checkpoint_callback = ModelCheckpoint(monitor="val_acc_16x16", mode="max",
-                                          dirpath='ckpt/L2P/add_random_resize_4conv_fix14token_2range', save_top_k=1,
-                                          save_last=True)
-    trainer = pl.Trainer.from_argparse_args(args, logger=wandb_logger, callbacks=[checkpoint_callback])
-    # lr_monitor = LearningRateMonitor(logging_interval="epoch")
-    # trainer = pl.Trainer.from_argparse_args(args)
-
-    for image_size, patch_size in [(224, 16)]:
-        args["model"].image_size = image_size
-        args["model"].patch_size = patch_size
-        model = ClassificationEvaluator(**args["model"])
-        data_config = timm.data.resolve_model_data_config(model.net)
-        val_transform = timm.data.create_transform(**data_config, is_training=False)
-        val_dataset = ImageFolder(root=os.path.join(args.root, 'val'), transform=val_transform)
-        val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=args.works,
-                                shuffle=False, pin_memory=True)
-        train_transform = timm.data.create_transform(**data_config, is_training=True)
-        train_dataset = ImageFolder(root=os.path.join(args.root, 'train'), transform=train_transform)
-        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.works,
-                                  shuffle=True, pin_memory=True)
-        trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader)
-        # trainer.test(model, dataloaders=val_loader)
