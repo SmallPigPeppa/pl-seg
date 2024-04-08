@@ -10,6 +10,14 @@ from einops import rearrange
 from transformer_model import TransModel2d, TransConfig
 import math
 
+import os
+import timm.models
+from timm import create_model
+from timm.models._manipulate import checkpoint_seq
+import torch.nn as nn
+from models.flex_patch_embed import FlexiPatchEmbed
+from flexivit_pytorch import (interpolate_resize_patch_embed, pi_resize_patch_embed)
+
 
 class Encoder2D(nn.Module):
     def __init__(self, config: TransConfig, is_segmentation=True):
@@ -29,20 +37,7 @@ class Encoder2D(nn.Module):
 
         self.is_segmentation = is_segmentation
 
-
-
-        orig_net = create_model(self.weights, pretrained=True)
-        # self.net = create_model(self.weights, pretrained=True)
-        state_dict = orig_net.state_dict()
-        self.origin_state_dict = state_dict
-        model_fn = getattr(timm.models, orig_net.default_cfg["architecture"])
-        self.net = model_fn(
-            img_size=224,
-            patch_size=16,
-            num_classes=self.num_classes,
-            dynamic_img_size=True
-        ).to(self.device)
-        self.net.load_state_dict(state_dict, strict=True)
+        self.net = create_model(self.weights, pretrained=True)
 
     def forward(self, x):
         ## x:(b, c, w, h)
@@ -82,6 +77,46 @@ class Encoder2D(nn.Module):
             x = self.net.blocks(x)
         x = self.net.norm(x)
         return x
+
+    def modified(self, new_image_size=224, new_patch_size=16):
+        self.embed_args = {}
+        self.in_chans = 3
+        self.embed_dim = self.net.num_features
+        self.pre_norm = False
+        self.dynamic_img_pad = False
+        if self.net.dynamic_img_size:
+            # flatten deferred until after pos embed
+            self.embed_args.update(dict(strict_img_size=False, output_fmt='NHWC'))
+        self.patch_embed_4x4 = self.get_patch_embed(image_size=56, patch_size=4)
+        self.patch_embed_8x8 = self.get_patch_embed(image_size=112, patch_size=8)
+        self.patch_embed_12x12 = self.get_patch_embed(image_size=168, patch_size=12)
+        self.patch_embed_16x16 = self.get_patch_embed(image_size=224, patch_size=16)
+        self.patch_embed_16x16_origin = self.get_patch_embed(image_size=224, patch_size=16)
+        self.patch_embed = self.get_patch_embed(image_size=224,
+                                                patch_size=[self.configpatch_size[0], self.configpatch_size[1]])
+
+        self.net.patch_embed = nn.Identity()
+
+    def get_patch_embed(self, image_size, patch_size):
+        new_patch_embed = FlexiPatchEmbed(
+            img_size=image_size,
+            patch_size=patch_size,
+            in_chans=self.in_chans,
+            embed_dim=self.embed_dim,
+            bias=not self.pre_norm,  # disable bias if pre-norm is used (e.g. CLIP)
+            **self.embed_args,
+        )
+        if hasattr(self.net.patch_embed.proj, 'weight'):
+            origin_weight = self.net.patch_embed.proj.weight.clone().detach()
+            new_weight = pi_resize_patch_embed(
+                patch_embed=origin_weight, new_patch_size=(patch_size, patch_size)
+            )
+            new_patch_embed.proj.weight = nn.Parameter(new_weight, requires_grad=True)
+        if self.net.patch_embed.proj.bias is not None:
+            new_patch_embed.proj.bias = nn.Parameter(self.net.patch_embed.proj.bias.clone().detach(),
+                                                     requires_grad=True)
+
+        return new_patch_embed
 
 
 class PreTrainModel(nn.Module):
