@@ -1,0 +1,1 @@
+python sweep_debug_resnet50.py --experiment_configs=configs_debug.py

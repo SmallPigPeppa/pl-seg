@@ -105,6 +105,41 @@ def get_learner(
         # learner.load(checkpoint_file)
     return learner
 
+def get_learner_resnet50(
+        resize_factor,
+        data_loader,
+        backbone: str,
+        hidden_dim: int,
+        num_classes: int,
+        checkpoint_file: Union[None, str, Path],
+        loss_func,
+        metrics: List,
+        log_preds: bool = False,
+):
+    model = SegmentationModel(backbone, hidden_dim, num_classes=num_classes)
+    # image_size = [896 // resize_factor, 896 // resize_factor]
+    # patch_size = [64 // resize_factor, 64 // resize_factor]
+    # model = SegmentationModelViT(vit_image_size=image_size,
+    #                              patch_size=patch_size,
+    #                              num_classes=num_classes,
+    #                              hidden_dim=768,
+    #                              decode_features=[512, 256, 128, 64],
+    #                              backbone='vit_base_patch16_224')
+    mixed_precision_callback = MixedPrecision()
+    wandb_callback = WandbCallback(log_model=False, log_preds=log_preds)
+    nan_callback = TerminateOnNaNCallback()
+    learner = Learner(
+        data_loader,
+        model,
+        loss_func=loss_func,
+        metrics=metrics,
+        cbs=[mixed_precision_callback, wandb_callback, nan_callback],
+    )
+    if checkpoint_file is not None:
+        load_model(checkpoint_file, learner.model, opt=None, with_opt=False)
+        # learner.load(checkpoint_file)
+    return learner
+
 
 def table_from_dl(learn, test_dl, class_labels):
     samples, outputs, predictions = get_predictions(learn, test_dl)
