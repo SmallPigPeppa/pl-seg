@@ -62,11 +62,11 @@ def get_config() -> ml_collections.ConfigDict:
     config.inference = get_inference_config()
     config.sweep_count = 5
     config.sweep_method = "bayes"
-    # config.sweep_metric_name = "foreground_acc"
-    # config.sweep_goal = "maximize"
+    config.sweep_metric_name = "foreground_acc"
+    config.sweep_goal = "maximize"
     # JaccardCoeffMulti()
-    config.sweep_metric_name = "jaccard_coeff_multi"
-    config.sweep_goal = "minimize"
+    # config.sweep_metric_name = "jaccard_coeff_multi"
+    # config.sweep_goal = "minimize"
 
     config.early_terminate_type = "hyperband"
     config.early_terminate_min_iter = 5
