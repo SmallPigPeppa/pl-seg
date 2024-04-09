@@ -9,6 +9,7 @@ from fastai.callback.wandb import WandbCallback
 from .camvid_utils import get_dataloader
 from .model import SegmentationModel
 from .metrics import create_dice_table
+from .model_vit import SegmentationModel as SegmentationModelViT
 
 
 def get_model_parameters(model):
@@ -30,18 +31,18 @@ def get_predictions(learner, test_dl=None, max_n=None):
 
 
 def benchmark_inference_time(
-    model_file,
-    image_shape: Tuple[int, int],
-    batch_size: int,
-    num_warmup_iters: int,
-    num_iter: int,
-    resize_factor: int
+        model_file,
+        image_shape: Tuple[int, int],
+        batch_size: int,
+        num_warmup_iters: int,
+        num_iter: int,
+        resize_factor: int
 ):
     model = torch.jit.load(model_file).cuda()
-    
+
     dummy_input = torch.randn(
-        batch_size, 3, image_shape[0] // resize_factor, 
-        image_shape[0] // resize_factor, dtype=torch.float
+        batch_size, 3, image_shape[0] // resize_factor,
+                       image_shape[0] // resize_factor, dtype=torch.float
     ).to("cuda")
 
     starter, ender = (
@@ -68,17 +69,28 @@ def benchmark_inference_time(
 
     return np.sum(timings) / (num_iter * batch_size)
 
+
 def get_learner(
-    data_loader,
-    backbone: str,
-    hidden_dim: int,
-    num_classes: int,
-    checkpoint_file: Union[None, str, Path],
-    loss_func,
-    metrics: List,
-    log_preds: bool = False,
+        image_shape,
+        resize_factor,
+        data_loader,
+        backbone: str,
+        hidden_dim: int,
+        num_classes: int,
+        checkpoint_file: Union[None, str, Path],
+        loss_func,
+        metrics: List,
+        log_preds: bool = False,
 ):
-    model = SegmentationModel(backbone, hidden_dim, num_classes=num_classes)
+    # model = SegmentationModel(backbone, hidden_dim, num_classes=num_classes)
+    image_size = [image_shape[0] // resize_factor, image_shape[1] // resize_factor]
+    patch_size = [48 // resize_factor, 64 // resize_factor]
+    model = SegmentationModelViT(image_size=image_size,
+                                 patch_size=patch_size,
+                                 num_classes=num_classes,
+                                 hidden_dim=768,
+                                 decode_features=[512, 256, 128, 64],
+                                 backbone='vit_base_patch16_224')
     mixed_precision_callback = MixedPrecision()
     wandb_callback = WandbCallback(log_model=False, log_preds=log_preds)
     nan_callback = TerminateOnNaNCallback()
@@ -102,11 +114,11 @@ def table_from_dl(learn, test_dl, class_labels):
 
 
 def save_model_to_artifacts(
-    model,
-    model_name: str,
-    image_shape: Tuple[int, int],
-    artifact_name: str,
-    metadata: Dict,
+        model,
+        model_name: str,
+        image_shape: Tuple[int, int],
+        artifact_name: str,
+        metadata: Dict,
 ):
     print("Saving model checkpoint")
     torch.save(model, model_name + ".pth")

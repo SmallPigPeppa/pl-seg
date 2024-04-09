@@ -42,6 +42,8 @@ def train_fn(configs: ml_collections.ConfigDict):
         loss_func=loss_alias_mappings[wandb.config.loss_function](axis=1),
         metrics=[DiceMulti(), foreground_acc],
         log_preds=False,
+        image_shape=(wandb.config.image_height, wandb.config.image_width),
+        resize_factor=wandb.config.image_resize_factor,
     )
 
     if wandb.config.fit == "fit":
