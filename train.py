@@ -62,9 +62,9 @@ def train_fn(configs: ml_collections.ConfigDict):
             wd=wandb.config.weight_decay,
         )
 
-    wandb.log(
-        {f"Predictions_Table": table_from_dl(learner, learner.dls.valid, class_labels)}
-    )
+    # wandb.log(
+    #     {f"Predictions_Table": table_from_dl(learner, learner.dls.valid, class_labels)}
+    # )
 
     # store model checkpoints and JIT
     # save_model_to_artifacts(
