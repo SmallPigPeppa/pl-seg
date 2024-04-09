@@ -44,6 +44,7 @@ def train_fn(configs: ml_collections.ConfigDict):
         checkpoint_file=None,
         loss_func=loss_alias_mappings[wandb.config.loss_function](axis=1),
         # metrics=[foreground_acc, m_acc, JaccardCoeffMulti(), APScoreMulti(), DiceMulti()],
+        # metrics=[foreground_acc, m_acc, JaccardCoeffMulti(), DiceMulti()],
         metrics=[foreground_acc,DiceMulti()],
         log_preds=False,
     )
@@ -66,18 +67,18 @@ def train_fn(configs: ml_collections.ConfigDict):
     )
 
     # store model checkpoints and JIT
-    save_model_to_artifacts(
-        learner.model,
-        f"Unet_{wandb.config.backbone}",
-        image_shape=(wandb.config.image_height, wandb.config.image_width),
-        artifact_name=f"{run.name}-saved-model",
-        metadata={
-            "backbone": wandb.config.backbone,
-            "hidden_dims": wandb.config.hidden_dims,
-            "input_size": (wandb.config.image_height, wandb.config.image_width),
-            "class_labels": class_labels,
-        },
-    )
+    # save_model_to_artifacts(
+    #     learner.model,
+    #     f"Unet_{wandb.config.backbone}",
+    #     image_shape=(wandb.config.image_height, wandb.config.image_width),
+    #     artifact_name=f"{run.name}-saved-model",
+    #     metadata={
+    #         "backbone": wandb.config.backbone,
+    #         "hidden_dims": wandb.config.hidden_dims,
+    #         "input_size": (wandb.config.image_height, wandb.config.image_width),
+    #         "class_labels": class_labels,
+    #     },
+    # )
 
     ## Inference benchmark
     model_file = f"Unet_{wandb.config.backbone}_traced.pt"
