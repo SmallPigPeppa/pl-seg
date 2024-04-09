@@ -25,7 +25,8 @@ def main(_):
             "image_resize_factor": {"values": [2, 4]},
             "backbone": {
                 "values": [
-                    "resnet50",
+                    # "resnet50",
+                    "vit-b/16",
                 ]
             },
             "loss_function": {"values": ["categorical_cross_entropy", "focal", "dice"]},

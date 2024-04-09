@@ -1,12 +1,14 @@
 import gc
 import wandb
 import ml_collections
-from fastai.vision.all import *
+import torch
+from fastai.torch_core import set_seed
+from fastai.metrics import DiceMulti, foreground_acc, JaccardCoeffMulti, APScoreMulti
+from fastai.metrics import accuracy as m_acc
 
-from segmentation.camvid_utils import *
-from segmentation.train_utils import *
-from segmentation.metrics import *
 from configs import get_config
+from segmentation.camvid_utils import get_dataloader
+from segmentation.train_utils import benchmark_inference_time, table_from_dl, save_model_to_artifacts, get_learner
 
 
 def train_fn(configs: ml_collections.ConfigDict):
@@ -41,7 +43,7 @@ def train_fn(configs: ml_collections.ConfigDict):
         num_classes=len(class_labels),
         checkpoint_file=None,
         loss_func=loss_alias_mappings[wandb.config.loss_function](axis=1),
-        metrics=[DiceMulti(), foreground_acc],
+        metrics=[foreground_acc, m_acc, JaccardCoeffMulti(), APScoreMulti(), DiceMulti()],
         log_preds=False,
     )
 
