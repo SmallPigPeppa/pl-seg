@@ -44,7 +44,7 @@ def train_fn(configs: ml_collections.ConfigDict):
         checkpoint_file=None,
         loss_func=loss_alias_mappings[wandb.config.loss_function](axis=1),
         # metrics=[foreground_acc, m_acc, JaccardCoeffMulti(), APScoreMulti(), DiceMulti()],
-        metrics=[foreground_acc, m_acc, JaccardCoeffMulti(), DiceMulti()],
+        metrics=[foreground_acc, JaccardCoeffMulti(), DiceMulti()],
         # metrics=[foreground_acc,DiceMulti()],
         log_preds=False,
     )
