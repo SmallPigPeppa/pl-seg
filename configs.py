@@ -65,7 +65,7 @@ def get_config() -> ml_collections.ConfigDict:
     # config.sweep_metric_name = "foreground_acc"
     # config.sweep_goal = "maximize"
     # JaccardCoeffMulti()
-    config.sweep_metric_name = "JaccardCoeffMulti"
+    config.sweep_metric_name = "jaccard_coeff_multi"
     config.sweep_goal = "minimize"
 
     config.early_terminate_type = "hyperband"
