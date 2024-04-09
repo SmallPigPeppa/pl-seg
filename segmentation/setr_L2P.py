@@ -22,16 +22,18 @@ from flexivit_pytorch import (interpolate_resize_patch_embed, pi_resize_patch_em
 class Encoder2D(nn.Module):
     def __init__(self, config: TransConfig):
 
-        def __init__(self, sample_rate=4, patch_size=(16, 16), ):
+        def __init__(self, sample_rate=4, patch_size=(16, 16), backbone='mobilenetv2_100'):
             super().__init__()
             # self.config = config
             # self.out_channels = config.out_channels
             # self.bert_model = TransModel2d(config)
             self.sample_rate = sample_rate
             self.sample_v = int(math.pow(2, sample_rate))
-            assert config.patch_size[0] * config.patch_size[1] * config.hidden_size % (self.sample_v ** 2) == 0, "不能除尽"
+            # assert config.patch_size[0] * config.patch_size[1] * config.hidden_size % (self.sample_v ** 2) == 0, "不能除尽"
+
+
             self.final_dense = nn.Linear(config.hidden_size,
-                                         config.patch_size[0] * config.patch_size[1] * config.hidden_size // (
+                                          config.patch_size[0] * config.patch_size[1] * config.hidden_size // (
                                                  self.sample_v ** 2))
             self.patch_size = config.patch_size
             self.hh = self.patch_size[0] // self.sample_v
@@ -40,6 +42,7 @@ class Encoder2D(nn.Module):
             self.weights = 'vit_base_patch16_224.augreg2_in21k_ft_in1k'
             self.net = create_model(self.weights, pretrained=True)
             self.modified()
+
 
     def check_input_size(self, h, w, p1, p2):
         """检查输入图像尺寸是否符合要求"""
