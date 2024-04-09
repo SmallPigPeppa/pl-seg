@@ -34,7 +34,9 @@ def train_fn(configs: ml_collections.ConfigDict):
     )
 
     learner = get_learner(
-        data_loader,
+        image_shape=(wandb.config.image_height, wandb.config.image_width),
+        resize_factor=wandb.config.image_resize_factor,
+        data_loader=data_loader,
         backbone=wandb.config.backbone,
         hidden_dim=wandb.config.hidden_dims,
         num_classes=len(class_labels),
@@ -42,8 +44,6 @@ def train_fn(configs: ml_collections.ConfigDict):
         loss_func=loss_alias_mappings[wandb.config.loss_function](axis=1),
         metrics=[DiceMulti(), foreground_acc],
         log_preds=False,
-        image_shape=(wandb.config.image_height, wandb.config.image_width),
-        resize_factor=wandb.config.image_resize_factor,
     )
 
     if wandb.config.fit == "fit":
