@@ -179,7 +179,7 @@ class SETRModel(nn.Module):
 if __name__ == "__main__":
     net = SETRModel(patch_size=(16, 16),
                     in_channels=3,
-                    out_channels=1,
+                    out_channels=26,
                     hidden_size=784,
                     num_hidden_layers=8,
                     num_attention_heads=16,
