@@ -1,17 +1,6 @@
-import logging
-import math
-import os
-import numpy as np
-
 import torch
-from torch import nn
-from torch.nn import CrossEntropyLoss, MSELoss
 from einops import rearrange
-from transformer_model import TransModel2d, TransConfig
 import math
-
-import os
-import timm.models
 from timm import create_model
 from timm.models._manipulate import checkpoint_seq
 import torch.nn as nn
@@ -20,53 +9,48 @@ from flexivit_pytorch import (interpolate_resize_patch_embed, pi_resize_patch_em
 
 
 class Encoder2D(nn.Module):
-    def __init__(self, config: TransConfig):
+    def __init__(self, decode_depth, hidden_dim, image_size, patch_size, backbone):
+        super().__init__()
+        self.backbone = backbone
+        self.decode_depth = decode_depth
+        self.patch_size = patch_size
+        self.image_size = image_size
+        self.hidden_dim = hidden_dim
+        self.num_ps = self.calculate_num_ps()
+        self.decode_scale = self.calculate_decode_scale()
+        self.fc = nn.Linear(hidden_dim, hidden_dim * self.decode_scale[0] * self.decode_scale[1])
 
-        def __init__(self, sample_rate=4, patch_size=(16, 16), backbone='mobilenetv2_100'):
-            super().__init__()
-            # self.config = config
-            # self.out_channels = config.out_channels
-            # self.bert_model = TransModel2d(config)
-            self.sample_rate = sample_rate
-            self.sample_v = int(math.pow(2, sample_rate))
-            # assert config.patch_size[0] * config.patch_size[1] * config.hidden_size % (self.sample_v ** 2) == 0, "不能除尽"
+        self.weights = 'vit_base_patch16_224.augreg2_in21k_ft_in1k'
+        self.net = create_model(self.backbone, pretrained=True, dynamic_img_size=True)
+        self.modified()
 
+    def calculate_num_ps(self):
+        # Calculate the number of patches along each dimension
+        assert self.image_size[0] % self.patch_size[0] == 0, "Image height must be divisible by patch height."
+        assert self.image_size[1] % self.patch_size[1] == 0, "Image width must be divisible by patch width."
+        n_ps0 = self.image_size[0] // self.patch_size[0]
+        n_ps1 = self.image_size[1] // self.patch_size[1]
+        return (n_ps0, n_ps1)
 
-            self.final_dense = nn.Linear(config.hidden_size,
-                                          config.patch_size[0] * config.patch_size[1] * config.hidden_size // (
-                                                 self.sample_v ** 2))
-            self.patch_size = config.patch_size
-            self.hh = self.patch_size[0] // self.sample_v
-            self.ww = self.patch_size[1] // self.sample_v
-
-            self.weights = 'vit_base_patch16_224.augreg2_in21k_ft_in1k'
-            self.net = create_model(self.weights, pretrained=True)
-            self.modified()
-
-
-    def check_input_size(self, h, w, p1, p2):
-        """检查输入图像尺寸是否符合要求"""
-        if h % p1 != 0 or w % p2 != 0:
-            raise ValueError("输入图像尺寸必须能够被 patch_size 整除")
+    def calculate_decode_scale(self):
+        # Calculate the number of patches along each dimension
+        k = int(math.pow(2, self.decode_depth))
+        assert self.patch_size[0] %  k == 0, f"Patch height must be divisible by {k}."
+        assert self.patch_size[1] %  k == 0, f"Patch width must be divisible by {k}."
+        decode_scale0 = self.patch_size[0] // k
+        decode_scale1 = self.patch_size[1] // k
+        return (decode_scale0, decode_scale1)
 
     def forward(self, x):
-        b, c, h, w = x.shape
-        p1, p2 = self.patch_size
-
-        # 确保输入尺寸符合要求
-        self.check_input_size(h, w, p1, p2)
-
-        # 计算patch的数量
-        hh, ww = h // p1, w // p2
-
-        # Embed patches and process features
+        # vit forward
         patch_embed_x = self.patch_embed(x, patch_size=self.patch_size)
-        encode_x = self.forward_features(patch_embed_x)[:, 1:, :]  # 假设forward_features处理方式不变
+        encode_x = self.forward_features(patch_embed_x)[:, 1:, :]
 
-        # 使用final_dense调整encode_x的形状，以匹配输出的期望形状
-        x = self.final_dense(encode_x)
-        x = rearrange(x, "b (h w) (p1 p2 c) -> b c (h p1) (w p2)", p1=self.hh, p2=self.ww, h=hh, w=ww,
-                      c=self.config.hidden_size)
+        # fc for decode
+        x = self.fc(encode_x)
+        x = rearrange(x, "b (h w) (p1 p2 c) -> b c (h p1) (w p2)", p1=self.decode_scale[0],
+                      p2=self.decode_scale[1], h=self.num_ps[0], w=self.num_ps[1],
+                      c=self.hidden_dim)
 
         return encode_x, x
 
@@ -144,7 +128,7 @@ class Decoder2D(nn.Module):
             nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
         )
 
-        self.final_out = nn.Conv2d(features[-1], out_channels, 3, padding=1)
+        self.final_out = nn.Conv2d(features[3], out_channels, 3, padding=1)
 
     def forward(self, x):
         x = self.decoder_1(x)
@@ -156,24 +140,24 @@ class Decoder2D(nn.Module):
 
 
 class SETRModel(nn.Module):
-    def __init__(self, patch_size=(32, 32),
-                 in_channels=3,
+    def __init__(self,
+                 image_size=(224, 224),
+                 patch_size=(16, 16),
                  num_classes=21,
-                 hidden_size=1024,
-                 num_hidden_layers=8,
-                 num_attention_heads=16,
+                 hidden_dim=768,
                  decode_features=[512, 256, 128, 64],
-                 sample_rate=4, ):
+                 backbone='vit_base_patch16_224'):
         super().__init__()
-        config = TransConfig(patch_size=patch_size,
-                             in_channels=in_channels,
-                             out_channels=num_classes,
-                             sample_rate=sample_rate,
-                             hidden_size=hidden_size,
-                             num_hidden_layers=num_hidden_layers,
-                             num_attention_heads=num_attention_heads)
-        self.encoder_2d = Encoder2D(config)
-        self.decoder_2d = Decoder2D(in_channels=hidden_size, out_channels=num_classes, features=decode_features)
+        self.encoder_2d = Encoder2D(
+            decode_depth=len(decode_features),
+            hidden_dim=hidden_dim,
+            image_size=image_size,
+            patch_size=patch_size,
+            backbone=backbone)
+        self.decoder_2d = Decoder2D(
+            in_channels=hidden_dim,
+            out_channels=num_classes,
+            features=decode_features)
 
     def forward(self, x):
         _, final_x = self.encoder_2d(x)
@@ -183,14 +167,13 @@ class SETRModel(nn.Module):
 
 if __name__ == "__main__":
     # def __init__(self, backbone="mobilenetv2_100", hidden_dim=256, num_classes=21):
-    net = SETRModel(patch_size=(16, 16),
-                    in_channels=3,
-                    num_classes=21,
-                    # hidden_size=784,
-                    hidden_size=768,
-                    num_hidden_layers=8,
-                    num_attention_heads=16,
-                    decode_features=[512, 256, 128, 64])
+    net = SETRModel(
+        image_size=(224, 224),
+        patch_size=(16, 16),
+        num_classes=21,
+        hidden_dim=768,
+        decode_features=[512, 256, 128, 64],
+        backbone='vit_base_patch16_224')
     t1 = torch.rand(16, 3, 224, 224)
     print("input: " + str(t1.shape))
 
