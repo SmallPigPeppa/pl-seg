@@ -6,6 +6,7 @@ from timm.models._manipulate import checkpoint_seq
 import torch.nn as nn
 from models.flex_patch_embed import FlexiPatchEmbed
 from flexivit_pytorch import (interpolate_resize_patch_embed, pi_resize_patch_embed)
+import torch.nn.functional as F
 
 
 class Encoder2D(nn.Module):
@@ -35,8 +36,8 @@ class Encoder2D(nn.Module):
     def calculate_decode_scale(self):
         # Calculate the number of patches along each dimension
         k = int(math.pow(2, self.decode_depth))
-        assert self.patch_size[0] %  k == 0, f"Patch height must be divisible by {k}."
-        assert self.patch_size[1] %  k == 0, f"Patch width must be divisible by {k}."
+        assert self.patch_size[0] % k == 0, f"Patch height must be divisible by {k}."
+        assert self.patch_size[1] % k == 0, f"Patch width must be divisible by {k}."
         decode_scale0 = self.patch_size[0] // k
         decode_scale1 = self.patch_size[1] // k
         return (decode_scale0, decode_scale1)
@@ -141,17 +142,18 @@ class Decoder2D(nn.Module):
 
 class SegmentationModel(nn.Module):
     def __init__(self,
-                 image_size=(224, 224),
+                 vit_image_size=(224, 224),
                  patch_size=(16, 16),
                  num_classes=21,
                  hidden_dim=768,
                  decode_features=[512, 256, 128, 64],
                  backbone='vit_base_patch16_224'):
         super().__init__()
+        self.vit_image_size = vit_image_size
         self.encoder_2d = Encoder2D(
             decode_depth=len(decode_features),
             hidden_dim=hidden_dim,
-            image_size=image_size,
+            image_size=vit_image_size,
             patch_size=patch_size,
             backbone=backbone)
         self.decoder_2d = Decoder2D(
@@ -160,21 +162,37 @@ class SegmentationModel(nn.Module):
             features=decode_features)
 
     def forward(self, x):
+        b, c, h, w = x.shape
+        x = F.interpolate(x, size=self.vit_image_size, mode="bilinear", align_corners=False)
         _, final_x = self.encoder_2d(x)
         x = self.decoder_2d(final_x)
+        x = F.interpolate(x, size=(h, w), mode="bilinear", align_corners=False)
         return x
 
 
 if __name__ == "__main__":
     # def __init__(self, backbone="mobilenetv2_100", hidden_dim=256, num_classes=21):
     net = SegmentationModel(
-        image_size=(224, 224),
+        vit_image_size=(224, 224),
         patch_size=(16, 16),
         num_classes=21,
         hidden_dim=768,
         decode_features=[512, 256, 128, 64],
         backbone='vit_base_patch16_224')
     t1 = torch.rand(16, 3, 224, 224)
+    print("input: " + str(t1.shape))
+
+    # print(net)
+    print("output: " + str(net(t1).shape))
+
+    net = SegmentationModel(
+        vit_image_size=(224, 224),
+        patch_size=(16, 16),
+        num_classes=21,
+        hidden_dim=768,
+        decode_features=[512, 256, 128, 64],
+        backbone='vit_base_patch16_224')
+    t1 = torch.rand(16, 3, 180, 240)
     print("input: " + str(t1.shape))
 
     # print(net)

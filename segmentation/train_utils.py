@@ -85,7 +85,7 @@ def get_learner(
     # model = SegmentationModel(backbone, hidden_dim, num_classes=num_classes)
     image_size = [image_shape[0] // resize_factor, image_shape[1] // resize_factor]
     patch_size = [48 // resize_factor, 64 // resize_factor]
-    model = SegmentationModelViT(image_size=image_size,
+    model = SegmentationModelViT(vit_image_size=image_size,
                                  patch_size=patch_size,
                                  num_classes=num_classes,
                                  hidden_dim=768,
