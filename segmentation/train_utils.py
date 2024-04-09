@@ -71,7 +71,6 @@ def benchmark_inference_time(
 
 
 def get_learner(
-        image_shape,
         resize_factor,
         data_loader,
         backbone: str,
@@ -83,8 +82,8 @@ def get_learner(
         log_preds: bool = False,
 ):
     # model = SegmentationModel(backbone, hidden_dim, num_classes=num_classes)
-    image_size = [image_shape[0] // resize_factor, image_shape[1] // resize_factor]
-    patch_size = [48 // resize_factor, 64 // resize_factor]
+    image_size = [896 // resize_factor, 896 // resize_factor]
+    patch_size = [64 // resize_factor, 64 // resize_factor]
     model = SegmentationModelViT(vit_image_size=image_size,
                                  patch_size=patch_size,
                                  num_classes=num_classes,

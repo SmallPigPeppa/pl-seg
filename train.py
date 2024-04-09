@@ -34,7 +34,6 @@ def train_fn(configs: ml_collections.ConfigDict):
     )
 
     learner = get_learner(
-        image_shape=(wandb.config.image_height, wandb.config.image_width),
         resize_factor=wandb.config.image_resize_factor,
         data_loader=data_loader,
         backbone=wandb.config.backbone,
