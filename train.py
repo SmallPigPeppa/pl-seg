@@ -80,21 +80,21 @@ def train_fn(configs: ml_collections.ConfigDict):
     #     },
     # )
 
-    ## Inference benchmark
-    model_file = f"Unet_{wandb.config.backbone}_traced.pt"
-    learner.model = learner.model.cpu()
+    # ## Inference benchmark
+    # model_file = f"Unet_{wandb.config.backbone}_traced.pt"
+    # learner.model = learner.model.cpu()
     del learner
-    gc.collect()
-    torch.cuda.empty_cache()
-    inference_time = benchmark_inference_time(
-        model_file,
-        batch_size=inference_config.batch_size,
-        image_shape=(wandb.config.image_height, wandb.config.image_width),
-        num_warmup_iters=inference_config.warmup,
-        num_iter=inference_config.num_iter,
-        resize_factor=inference_config.resize_factor,
-    )
-    wandb.log({"inference_time": inference_time})
+    # gc.collect()
+    # torch.cuda.empty_cache()
+    # inference_time = benchmark_inference_time(
+    #     model_file,
+    #     batch_size=inference_config.batch_size,
+    #     image_shape=(wandb.config.image_height, wandb.config.image_width),
+    #     num_warmup_iters=inference_config.warmup,
+    #     num_iter=inference_config.num_iter,
+    #     resize_factor=inference_config.resize_factor,
+    # )
+    # wandb.log({"inference_time": inference_time})
 
 
 if __name__ == "__main__":
