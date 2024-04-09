@@ -30,8 +30,8 @@ def main(_):
                 ]
             },
             "loss_function": {"values": ["categorical_cross_entropy"]},
-            "learning_rate": {"distribution": "uniform", "min": 1e-5, "max": 1e-2},
-            "weight_decay": {"distribution": "uniform", "min": 0.0, "max": 0.05},
+            "learning_rate": {"values": [0.00004186]},
+            "weight_decay": {"values": [0.02236]},
         },
     }
     sweep_id = wandb.sweep(
