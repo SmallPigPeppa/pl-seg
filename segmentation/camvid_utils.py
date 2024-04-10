@@ -1,8 +1,8 @@
 import wandb
 from typing import Tuple, Dict
-# from fastai.vision.all import *
-from fastai.vision.all import Image, Path, Resize, progress_bar, get_image_files, SegmentationDataLoaders, \
-    aug_transforms, Normalize, imagenet_stats
+from fastai.vision.all import *
+# from fastai.vision.all import Image, Path, Resize, progress_bar, get_image_files, SegmentationDataLoaders, \
+#     aug_transforms, Normalize, imagenet_stats
 import numpy as np
 
 
@@ -121,14 +121,19 @@ def get_dataloader(
     fnames = get_image_files(artifact_dir / "images")
     class_labels = {k: v for k, v in enumerate(codes)}
 
-    # 定义数据增强
-    batch_tfms = aug_transforms(mult=2.0, do_flip=True, flip_vert=True, max_rotate=45.0, max_zoom=1.1, max_lighting=0.2,
-                                max_warp=0.2, p_affine=0.75, p_lighting=0.75, xtra_tfms=None, size=None,
-                                mode='bilinear',
-                                pad_mode='reflection', align_corners=True, batch=False, min_scale=1.0)
-    if normalize:
-        # 加入归一化，这里使用ImageNet的均值和标准差作为示例
-        batch_tfms.append(Normalize.from_stats(*imagenet_stats))
+    # # 定义数据增强
+    # batch_tfms = aug_transforms(mult=2.0, do_flip=True, flip_vert=True, max_rotate=45.0, max_zoom=1.1, max_lighting=0.2,
+    #                             max_warp=0.2, p_affine=0.75, p_lighting=0.75, xtra_tfms=None, size=None,
+    #                             mode='bilinear',
+    #                             pad_mode='reflection', align_corners=True, batch=False, min_scale=1.0)
+    # if normalize:
+    #     # 加入归一化，这里使用ImageNet的均值和标准差作为示例
+    #     batch_tfms.append(Normalize.from_stats(*imagenet_stats))
+
+    imagenet_stats = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+
+    # Creating a Pipeline for batch transforms
+    batch_tfms = Pipeline([*aug_transforms(), Normalize.from_stats(*imagenet_stats)])
 
     # 使用数据增强和归一化创建DataLoaders
     dls = SegmentationDataLoaders.from_label_func(
