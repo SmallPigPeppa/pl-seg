@@ -107,6 +107,17 @@ def get_dataloader(
     """Grab an artifact and creating a Pytorch DataLoader with data augmentation and normalization."""
     artifact = wandb.use_artifact(artifact_id, type="dataset")
     artifact_dir = Path(artifact.download())
+
+    # 检查数据集是否已下载
+    artifact_dir = Path('/mnt/mmtech01/usr/liuwenzhuo/torch_ds/pl-seg') / artifact_id  # 设置存储下载数据的路径
+    if not artifact_dir.exists():  # 如果路径不存在，说明需要下载数据集
+        artifact = wandb.use_artifact(artifact_id, type="dataset")
+        artifact_dir = Path(artifact.download())
+    else:
+        print(f"Using cached dataset at {artifact_dir}")
+
+
+
     codes = np.loadtxt(artifact_dir / "codes.txt", dtype=str)
     fnames = get_image_files(artifact_dir / "images")
     class_labels = {k: v for k, v in enumerate(codes)}
