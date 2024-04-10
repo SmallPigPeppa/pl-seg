@@ -133,7 +133,7 @@ def get_dataloader(
     imagenet_stats = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
     # Creating a Pipeline for batch transforms
-    batch_tfms = Pipeline([aug_transforms(size=(image_shape[0] // resize_factor, image_shape[1] // resize_factor)),
+    batch_tfms = Pipeline([*aug_transforms(size=(image_shape[0] // resize_factor, image_shape[1] // resize_factor)),
                            Normalize.from_stats(*imagenet_stats)])
 
     # 使用数据增强和归一化创建DataLoaders
