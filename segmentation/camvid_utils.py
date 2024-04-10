@@ -135,17 +135,20 @@ def get_dataloader(
     # Creating a Pipeline for batch transforms
     # batch_tfms = Pipeline([aug_transforms(size=(image_shape[0] // resize_factor, image_shape[1] // resize_factor)),
     #                        Normalize.from_stats(*imagenet_stats)])
-
+    # Normalize.from_stats(*imagenet_stats)
+    image_size = (image_shape[0] // resize_factor, image_shape[1] // resize_factor)
     # 使用数据增强和归一化创建DataLoaders
+    # item_tfms=Resize((image_shape[0] // resize_factor, image_shape[1] // resize_factor)),
+    # item_tfms=Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     dls = SegmentationDataLoaders.from_label_func(
         artifact_dir,
         bs=batch_size,
         fnames=fnames,
-        label_func=label_func,  # 确保你有定义label_func
+        label_func=label_func,
         codes=codes,
-        item_tfms=Resize((image_shape[0] // resize_factor, image_shape[1] // resize_factor)),
-        batch_tfms=aug_transforms(size=(image_shape[0] // resize_factor, image_shape[1] // resize_factor)),
+        batch_tfms=[*aug_transforms(size=image_size),
+                    Normalize.from_stats(*imagenet_stats)],
         valid_pct=validation_split,
-        seed=seed,
-    )
+        seed=seed)
+
     return dls, class_labels
