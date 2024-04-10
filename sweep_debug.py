@@ -23,7 +23,7 @@ def main(_):
         "parameters": {
             "batch_size": {"values": [4, 8, 16]},
             # "num_epochs": {"distribution": "uniform", "min": 40, "max": 101, "q": 10},
-            "num_epochs": {"values": [5, 10, 20, 40]},
+            "num_epochs": {"values": list(range(40, 100, 10))},
             "image_resize_factor": {"values": [2, 4]},
             "backbone": {
                 "values": [
