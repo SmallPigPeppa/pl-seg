@@ -22,7 +22,8 @@ def main(_):
         },
         "parameters": {
             "batch_size": {"values": [4, 8, 16]},
-            "num_epochs": {"values": [5, 10, 20, 40]},
+            "num_epochs": {"distribution": "uniform", "min": 40, "max": 101, "q": 10},
+            # "num_epochs": {"values": [5, 10, 20, 40]},
             "image_resize_factor": {"values": [2, 4]},
             "backbone": {
                 "values": [
@@ -31,7 +32,7 @@ def main(_):
                 ]
             },
             "loss_function": {"values": ["categorical_cross_entropy", "focal", "dice"]},
-            "learning_rate": {"distribution": "uniform", "min": 1e-5, "max": 1e-2},
+            "learning_rate": {"distribution": "uniform", "min": 1e-6, "max": 1e-3},
             "weight_decay": {"distribution": "uniform", "min": 0.0, "max": 0.05},
         },
     }
