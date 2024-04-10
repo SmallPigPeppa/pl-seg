@@ -143,7 +143,7 @@ def get_dataloader(
         fnames=fnames,
         label_func=label_func,  # 确保你有定义label_func
         codes=codes,
-        item_tfms=Normalize.from_stats(*imagenet_stats),
+        item_tfms=Resize((image_shape[0] // resize_factor, image_shape[1] // resize_factor)),
         batch_tfms=aug_transforms(size=(image_shape[0] // resize_factor, image_shape[1] // resize_factor)),
         valid_pct=validation_split,
         seed=seed,
