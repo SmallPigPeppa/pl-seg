@@ -1,6 +1,6 @@
 from fastai.vision.all import *
 
-path = untar_data(URLs.CAMVID_TINY)
+path = untar_data(URLs.CAMVID)
 path = untar_data(URLs.PASCAL_2007)
 path = untar_data(URLs.PASCAL_2012)
 # path.ls()
