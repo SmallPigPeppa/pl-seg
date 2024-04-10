@@ -1,7 +1,8 @@
 import wandb
 from typing import Tuple, Dict
 # from fastai.vision.all import *
-from fastai.vision.all import Image, Path, Resize, progress_bar, get_image_files, SegmentationDataLoaders,aug_transforms,Normalize,imagenet_stats
+from fastai.vision.all import Image, Path, Resize, progress_bar, get_image_files, SegmentationDataLoaders, \
+    aug_transforms, Normalize, imagenet_stats
 import numpy as np
 
 
@@ -105,8 +106,8 @@ def get_dataloader(
         normalize: bool = True,  # 新增参数控制是否进行归一化
 ):
     """Grab an artifact and creating a Pytorch DataLoader with data augmentation and normalization."""
-    artifact = wandb.use_artifact(artifact_id, type="dataset")
-    artifact_dir = Path(artifact.download())
+    # artifact = wandb.use_artifact(artifact_id, type="dataset")
+    # artifact_dir = Path(artifact.download())
 
     # 检查数据集是否已下载
     artifact_dir = Path('/mnt/mmtech01/usr/liuwenzhuo/torch_ds/pl-seg') / artifact_id  # 设置存储下载数据的路径
@@ -116,17 +117,15 @@ def get_dataloader(
     else:
         print(f"Using cached dataset at {artifact_dir}")
 
-
-
     codes = np.loadtxt(artifact_dir / "codes.txt", dtype=str)
     fnames = get_image_files(artifact_dir / "images")
     class_labels = {k: v for k, v in enumerate(codes)}
 
     # 定义数据增强
-    batch_tfms = [
-        aug_transforms(mult=2.0, do_flip=True, flip_vert=True, max_rotate=45.0, max_zoom=1.1, max_lighting=0.2,
-                       max_warp=0.2, p_affine=0.75, p_lighting=0.75, xtra_tfms=None, size=None, mode='bilinear',
-                       pad_mode='reflection', align_corners=True, batch=False, min_scale=1.0)]
+    batch_tfms = aug_transforms(mult=2.0, do_flip=True, flip_vert=True, max_rotate=45.0, max_zoom=1.1, max_lighting=0.2,
+                                max_warp=0.2, p_affine=0.75, p_lighting=0.75, xtra_tfms=None, size=None,
+                                mode='bilinear',
+                                pad_mode='reflection', align_corners=True, batch=False, min_scale=1.0)
     if normalize:
         # 加入归一化，这里使用ImageNet的均值和标准差作为示例
         batch_tfms.append(Normalize.from_stats(*imagenet_stats))
