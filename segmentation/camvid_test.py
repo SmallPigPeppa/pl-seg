@@ -92,8 +92,9 @@ path = untar_data(URLs.PASCAL_2012)
 
 
 # Untar and Load Files
-path = untar_data(URLs.PASCAL_2007)
+path = untar_data(URLs.PASCAL_2012)
 files = get_image_files(path / 'train')
+# files = get_image_files(path / 'test')
 
 
 # Filter files to only include those with a corresponding segmentation mask
@@ -115,9 +116,11 @@ dls = SegmentationDataLoaders.from_label_func(
     fnames=filtered_files,
     label_func=labeller,
     item_tfms=Resize(image_size),
-    batch_tfms=[Resize(image_size),*aug_transforms(size=image_size)],
+    # batch_tfms=[Resize(image_size),*aug_transforms(size=image_size)],
     bs=8
 )
 
 # Show a batch to verify everything is working
 # dls.show_batch(max_n=6, nrows=1)
+
+

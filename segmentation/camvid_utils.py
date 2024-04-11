@@ -146,8 +146,10 @@ def get_dataloader(
         fnames=fnames,
         label_func=label_func,
         codes=codes,
-        batch_tfms=[*aug_transforms(size=image_size),
-                    Normalize.from_stats(*imagenet_stats)],
+        # batch_tfms=[*aug_transforms(size=image_size),
+        #             Normalize.from_stats(*imagenet_stats)],
+        item_tfms=Resize(image_size),
+        batch_tfms=[*aug_transforms(size=image_size)],
         valid_pct=validation_split,
         seed=seed)
 
