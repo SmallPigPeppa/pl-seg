@@ -1,0 +1,1 @@
+python train_best_camvid.py --experiment_configs=configs_best_camvid.py

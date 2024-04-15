@@ -10,6 +10,7 @@ from .camvid_utils import get_dataloader
 from .model import SegmentationModel
 from .metrics import create_dice_table
 from .model_vit import SegmentationModel as SegmentationModelViT
+from .model_vit_flex import SegmentationModel as SegmentationModelViTFlex
 
 
 def get_model_parameters(model):
@@ -104,6 +105,41 @@ def get_learner(
         load_model(checkpoint_file, learner.model, opt=None, with_opt=False)
         # learner.load(checkpoint_file)
     return learner
+
+
+def get_learner_flex(
+        image_shape,
+        resize_factor,
+        data_loader,
+        backbone: str,
+        hidden_dim: int,
+        num_classes: int,
+        checkpoint_file: Union[None, str, Path],
+        loss_func,
+        metrics: List,
+        log_preds: bool = False,
+):
+    image_size = [image_shape[0] // resize_factor, image_shape[1] // resize_factor]
+    model = SegmentationModelViTFlex(
+        image_size=image_size,
+        num_classes=num_classes,
+        hidden_dim=768,
+        decode_features=[512, 256, 128, 64])
+    mixed_precision_callback = MixedPrecision()
+    wandb_callback = WandbCallback(log_model=False, log_preds=log_preds)
+    nan_callback = TerminateOnNaNCallback()
+    learner = Learner(
+        data_loader,
+        model,
+        loss_func=loss_func,
+        metrics=metrics,
+        cbs=[mixed_precision_callback, wandb_callback, nan_callback],
+    )
+    if checkpoint_file is not None:
+        load_model(checkpoint_file, learner.model, opt=None, with_opt=False)
+        # learner.load(checkpoint_file)
+    return learner
+
 
 def get_learner_resnet50(
         resize_factor,

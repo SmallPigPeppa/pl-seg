@@ -5,7 +5,7 @@ from functools import partial
 
 from ml_collections.config_flags import config_flags
 
-from train import train_fn
+from train_flex import train_fn
 
 FLAGS = flags.FLAGS
 config_flags.DEFINE_config_file("experiment_configs")
@@ -23,7 +23,7 @@ def main(_):
         "parameters": {
             "batch_size": {"values": [8]},
             "num_epochs": {"values": [90]},
-            "image_resize_factor": {"values": [2, 4, 8]},
+            "image_resize_factor": {"values": [2, 4, 6, 8]},
             "backbone": {
                 "values": [
                     "resnet50",
