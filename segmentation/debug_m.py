@@ -19,7 +19,7 @@ def find_best_match_resolution(image_size, num_ps):
 import math
 
 
-def find_optimal_patch_and_size(image_size, depth, min_patches=12, max_patches=16):
+def find_optimal_patch_and_size(image_size, depth, min_patches=9, max_patches=16):
     """
     根据输入的图像尺寸、深度和patch数量范围，找到最优的 patch size 和调整后的 image size。
 
@@ -73,9 +73,9 @@ def find_optimal_patch_and_size(image_size, depth, min_patches=12, max_patches=1
 # print("Adjusted image sizes:", new_sizes)
 # print("Number of patches:", num_patches)
 
-for k in range(1, 5):
+for k in range(1,6):
     image_size = (720 // k, 960 // k)
-    depth = 3
+    depth = 4
     patch_sizes, new_sizes, num_patches = find_optimal_patch_and_size(image_size, depth)
     # print("IMG sizes:", image_size)
     print("IMG sizes:", image_size)

@@ -26,7 +26,7 @@ class Encoder2D(nn.Module):
         # self.net = ClassificationEvaluator.load_from_checkpoint(strict=True, **args)
         self.net = ClassificationEvaluator(**args)
 
-    def find_optimal_patch_and_size(self, image_size, depth, min_patches=12, max_patches=16):
+    def find_optimal_patch_and_size(self, image_size, depth, min_patches=9, max_patches=16):
         """
         根据输入的图像尺寸、深度和patch数量范围，找到最优的 patch size 和调整后的 image size。
 
@@ -124,11 +124,11 @@ class Decoder2D(nn.Module):
 
 class SegmentationModel(nn.Module):
     def __init__(self,
-                 image_size=(224, 224),
+                 image_size,
                  # num_patch=(16, 16),
                  # patch_size=(16, 16),
-                 num_classes=21,
-                 hidden_dim=768,
+                 num_classes,
+                 hidden_dim,
                  decode_features=[512, 256, 128, 64]):
         super().__init__()
         # self.vit_image_size = vit_image_size
@@ -155,7 +155,7 @@ class SegmentationModel(nn.Module):
 
 
 if __name__ == "__main__":
-    k = 8
+    k = 3
     image_size = (720 // k, 960 // k)
 
     net = SegmentationModel(
