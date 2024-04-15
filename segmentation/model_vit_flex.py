@@ -1,5 +1,5 @@
 import torch
-from flexivit import ClassificationEvaluator
+from segmentation.flexivit import ClassificationEvaluator
 import math
 import torch.nn as nn
 import torch.nn.functional as F
