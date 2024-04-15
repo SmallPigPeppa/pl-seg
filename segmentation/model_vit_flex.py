@@ -163,7 +163,8 @@ if __name__ == "__main__":
         num_classes=21,
         hidden_dim=768,
         decode_features=[512, 256, 128, 64],
-        backbone='vit_base_patch16_224')
+        # backbone='vit_base_patch16_224'
+        )
     t1 = torch.rand(16, 3, *image_size)
     print("input: " + str(t1.shape))
 
