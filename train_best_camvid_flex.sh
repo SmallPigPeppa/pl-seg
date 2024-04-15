@@ -1,1 +1,1 @@
-python train_best_camvid_flex.py --experiment_configs=configs_best_camvid.py
+python train_best_camvid_flex.py --experiment_configs=configs_best_camvid_flex.py
