@@ -155,7 +155,7 @@ class SegmentationModel(nn.Module):
 
 
 if __name__ == "__main__":
-    k = 2
+    k = 8
     image_size = (720 // k, 960 // k)
 
     net = SegmentationModel(

@@ -77,6 +77,8 @@ for k in range(1, 5):
     image_size = (720 // k, 960 // k)
     depth = 3
     patch_sizes, new_sizes, num_patches = find_optimal_patch_and_size(image_size, depth)
-    print("Patch sizes:", patch_sizes)
+    # print("IMG sizes:", image_size)
+    print("IMG sizes:", image_size)
     print("Adjusted image sizes:", new_sizes)
+    print("Patch sizes:", patch_sizes)
     print("Number of patches:", num_patches)

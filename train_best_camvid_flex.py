@@ -23,7 +23,7 @@ def main(_):
         "parameters": {
             "batch_size": {"values": [8]},
             "num_epochs": {"values": [90]},
-            "image_resize_factor": {"values": [1,2,4,6,8]},
+            "image_resize_factor": {"values": list(range(1, 5))},
             "backbone": {
                 "values": [
                     "resnet50",
