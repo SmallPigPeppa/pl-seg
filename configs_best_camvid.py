@@ -6,7 +6,7 @@ def get_wandb_configs() -> ml_collections.ConfigDict:
     config = ml_collections.ConfigDict()
 
     config.name = None
-    config.project = "pl-seg"
+    config.project = "pl-seg-best"
     config.entity = "pigpeppa"
     # config.entity = "av-demo"
     config.job_type = "sweep"
